@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
 
-// ─── Design tokens ───────────────────────────────────────────────
 const R   = '#C8102E';
 const BG  = '#0A0A0C';
 const C1  = '#111114';
@@ -17,18 +16,17 @@ const ER  = '#F87171';
 const H   = "'Syne', system-ui, sans-serif";
 const M   = "'DM Mono', monospace";
 
-// ─── Static data ─────────────────────────────────────────────────
 const STORES = [
-  { id:1, num:'#4821', city:'Madison',    state:'WI', addr:'1847 E. Washington Ave',  mgr:'Sandra Kowalski', phone:'(608)555-0142', online:true,  alerts:0, dailyCooks:6.2, avgHold:'3h 22m', compliance:99.1 },
-  { id:2, num:'#4822', city:'Madison',    state:'WI', addr:'2204 Mineral Point Rd',   mgr:'Tom Reeves',      phone:'(608)555-0198', online:true,  alerts:1, dailyCooks:5.8, avgHold:'3h 15m', compliance:97.8 },
-  { id:3, num:'#4823', city:'Sun Prairie',state:'WI', addr:'115 Windsor St',          mgr:'Janice Miller',   phone:'(608)555-0221', online:true,  alerts:0, dailyCooks:4.9, avgHold:'3h 44m', compliance:100.0},
-  { id:4, num:'#4824', city:'Middleton',  state:'WI', addr:'7503 University Ave',     mgr:'Chris Andersen',  phone:'(608)555-0187', online:false, alerts:2, dailyCooks:5.5, avgHold:'3h 08m', compliance:96.2 },
+  { id:1, num:'#4821', city:'Madison',     state:'WI', addr:'1847 E. Washington Ave', mgr:'Sandra Kowalski', phone:'(608)555-0142', online:true,  alerts:0, dailyCooks:6.2, avgHold:'3h 22m', compliance:99.1  },
+  { id:2, num:'#4822', city:'Madison',     state:'WI', addr:'2204 Mineral Point Rd',  mgr:'Tom Reeves',      phone:'(608)555-0198', online:true,  alerts:1, dailyCooks:5.8, avgHold:'3h 15m', compliance:97.8  },
+  { id:3, num:'#4823', city:'Sun Prairie', state:'WI', addr:'115 Windsor St',         mgr:'Janice Miller',   phone:'(608)555-0221', online:true,  alerts:0, dailyCooks:4.9, avgHold:'3h 44m', compliance:100.0 },
+  { id:4, num:'#4824', city:'Middleton',   state:'WI', addr:'7503 University Ave',    mgr:'Chris Andersen',  phone:'(608)555-0187', online:false, alerts:2, dailyCooks:5.5, avgHold:'3h 08m', compliance:96.2  },
 ];
 
 const USERS = [
-  { id:1, name:'Alex Rivera',      email:'admin@wyze.io',    pass:'admin', role:'admin',      stores:[1,2,3,4], title:'System Administrator' },
-  { id:2, name:'Morgan Lee',       email:'morgan@arbys.com', pass:'demo',  role:'franchisee', stores:[1,2,3,4], title:'District Franchisee'  },
-  { id:3, name:'Sandra Kowalski',  email:'sandra@arbys.com', pass:'store', role:'manager',    stores:[1],       title:'Store Manager'        },
+  { id:1, name:'Alex Rivera',     email:'admin@wyze.io',    pass:'admin', role:'admin',      stores:[1,2,3,4], title:'System Administrator' },
+  { id:2, name:'Morgan Lee',      email:'morgan@arbys.com', pass:'demo',  role:'franchisee', stores:[1,2,3,4], title:'District Franchisee'  },
+  { id:3, name:'Sandra Kowalski', email:'sandra@arbys.com', pass:'store', role:'manager',    stores:[1],       title:'Store Manager'        },
 ];
 
 const COOK_INIT = [
@@ -64,7 +62,28 @@ function buildHistory() {
   }));
 }
 
-// ─── Tiny sub-components ─────────────────────────────────────────
+// ── Logo bar — used in both sidebar and login ─────────────────────
+function LogoBar({ size = 'normal' }) {
+  const h    = size === 'small' ? 28 : 40;
+  const gap  = size === 'small' ? 10 : 16;
+  const divW = size === 'small' ? 1  : 1;
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap }}>
+      <img
+        src="/wyzetemp_logo.png"
+        alt="WyzeTemp"
+        style={{ height: h, width:'auto', objectFit:'contain', display:'block' }}
+      />
+      <div style={{ width: divW, height: h * 0.7, background: BR, flexShrink:0 }} />
+      <img
+        src="/arbys_logo.png"
+        alt="Arby's"
+        style={{ height: h, width:'auto', objectFit:'contain', display:'block' }}
+      />
+    </div>
+  );
+}
+
 function Stat({ label, val, sub, color }) {
   return (
     <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:8, padding:'13px 15px' }}>
@@ -84,40 +103,30 @@ function ChartTooltip({ active, payload }) {
   );
 }
 
-// ─── Cook card ───────────────────────────────────────────────────
 function CookCard({ cook }) {
   const pct     = Math.min(100, (cook.elapsed / cook.total) * 100);
   const rem     = cook.total - cook.elapsed;
   const sc      = cook.status === 'holding' ? OK : cook.status === 'cooking' ? WN : ER;
   const holding = cook.status === 'holding';
-
   return (
     <div style={{ background:C1, border:`1px solid ${holding ? OK+'33' : BR}`, borderRadius:10, padding:18, display:'flex', flexDirection:'column', gap:12 }}>
-      {/* Header */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
         <div>
           <div style={{ fontFamily:H, fontWeight:700, fontSize:14, color:T1, marginBottom:3 }}>{cook.name}</div>
           <div style={{ fontSize:10, color:T2, fontFamily:M }}>{cook.unit} · {cook.op}</div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:5, background:`${sc}15`, border:`1px solid ${sc}33`, borderRadius:20, padding:'3px 9px' }}>
-          <div style={{ width:5, height:5, borderRadius:'50%', background:sc,
-            animation: cook.status==='cooking' ? 'blink 1.8s ease-in-out infinite' : 'none' }} />
+          <div style={{ width:5, height:5, borderRadius:'50%', background:sc, animation: cook.status==='cooking'?'blink 1.8s ease-in-out infinite':'none' }} />
           <span style={{ fontSize:9, color:sc, letterSpacing:1.5, textTransform:'uppercase', fontFamily:M }}>{cook.status}</span>
         </div>
       </div>
-
-      {/* Temperature */}
       <div style={{ display:'flex', alignItems:'baseline', gap:10 }}>
-        <div style={{ fontFamily:H, fontWeight:800, fontSize:34, color:sc, letterSpacing:-1, lineHeight:1 }}>
-          {cook.temp.toFixed(1)}°
-        </div>
+        <div style={{ fontFamily:H, fontWeight:800, fontSize:34, color:sc, letterSpacing:-1, lineHeight:1 }}>{cook.temp.toFixed(1)}°</div>
         <div style={{ fontFamily:M, fontSize:11 }}>
           <div style={{ color:T2 }}>Target <span style={{ color:R }}>{cook.target}°F</span></div>
           <div style={{ color:T3 }}>Hold {cook.hold}°F</div>
         </div>
       </div>
-
-      {/* Sparkline */}
       <div style={{ height:72 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={cook.data} margin={{ top:2, right:2, bottom:2, left:0 }}>
@@ -130,8 +139,6 @@ function CookCard({ cook }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
-
-      {/* Progress bar */}
       <div>
         <div style={{ display:'flex', justifyContent:'space-between', fontFamily:M, fontSize:10, color:T2, marginBottom:5 }}>
           <span>{Math.floor(cook.elapsed/60)}h {String(Math.floor(cook.elapsed%60)).padStart(2,'0')}m elapsed</span>
@@ -145,7 +152,6 @@ function CookCard({ cook }) {
   );
 }
 
-// ─── Sidebar ─────────────────────────────────────────────────────
 function Sidebar({ view, setView, user, onLogout }) {
   const links = [
     ...(user?.role !== 'manager' ? [{ id:'multi', icon:'▦', label:'All Stores' }] : []),
@@ -153,15 +159,10 @@ function Sidebar({ view, setView, user, onLogout }) {
     ...(user?.role === 'admin'   ? [{ id:'admin', icon:'⚙', label:'Admin'      }] : []),
   ];
   return (
-    <div style={{ position:'fixed', left:0, top:0, bottom:0, width:196, background:C1, borderRight:`1px solid ${BR}`, display:'flex', flexDirection:'column', zIndex:200 }}>
-      <div style={{ padding:'18px 15px 14px', borderBottom:`1px solid ${BR}` }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:30, height:30, background:R, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:H, fontWeight:800, fontSize:15, color:'#fff' }}>W</div>
-          <div>
-            <div style={{ fontFamily:H, fontWeight:700, fontSize:13, color:T1 }}>WyzeTemp</div>
-            <div style={{ fontSize:9, color:T3, letterSpacing:2, textTransform:'uppercase', fontFamily:M }}>ARBY'S</div>
-          </div>
-        </div>
+    <div style={{ position:'fixed', left:0, top:0, bottom:0, width:210, background:C1, borderRight:`1px solid ${BR}`, display:'flex', flexDirection:'column', zIndex:200 }}>
+      {/* Logo bar at top of sidebar */}
+      <div style={{ padding:'16px 14px', borderBottom:`1px solid ${BR}` }}>
+        <LogoBar size="small" />
       </div>
       <nav style={{ flex:1, padding:'10px 7px' }}>
         {links.map(l => (
@@ -187,7 +188,6 @@ function Sidebar({ view, setView, user, onLogout }) {
   );
 }
 
-// ─── Beef Sheet modal ─────────────────────────────────────────────
 function BeefSheet({ store, cooks, onClose }) {
   const now = new Date();
   const download = () => {
@@ -223,7 +223,6 @@ function BeefSheet({ store, cooks, onClose }) {
     a.download = `beef-sheet-${store.num.replace('#','')}-${now.toISOString().split('T')[0]}.html`;
     a.click();
   };
-
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.78)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
       <div onClick={e => e.stopPropagation()} style={{ background:'#fff', color:'#111', borderRadius:12, padding:26, maxWidth:660, width:'100%', maxHeight:'86vh', overflowY:'auto' }}>
@@ -264,39 +263,29 @@ function BeefSheet({ store, cooks, onClose }) {
           <strong>HACCP Note:</strong> All beef must reach min 155°F (160°F brisket). Hold ≥140°F. Discard after 4h hold. Retain 30+ days.
         </div>
         <div style={{ display:'flex', gap:9, justifyContent:'flex-end' }}>
-          <button onClick={onClose} style={{ background:'#eee', border:'none', borderRadius:6, padding:'8px 16px', fontSize:12, cursor:'pointer' }}>Close</button>
-          <button onClick={download} style={{ background:'#C8102E', border:'none', borderRadius:6, padding:'8px 16px', color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer' }}>↓ Download</button>
+          <button onClick={onClose}    style={{ background:'#eee', border:'none', borderRadius:6, padding:'8px 16px', fontSize:12, cursor:'pointer' }}>Close</button>
+          <button onClick={download}   style={{ background:'#C8102E', border:'none', borderRadius:6, padding:'8px 16px', color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer' }}>↓ Download</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Login view ───────────────────────────────────────────────────
 function LoginView({ onLogin }) {
   const [email, setEmail] = useState('');
   const [pass,  setPass ] = useState('');
   const [err,   setErr  ] = useState('');
-
   const attempt = () => {
     const u = USERS.find(u => u.email === email && u.pass === pass);
     u ? onLogin(u) : setErr('Invalid credentials. Try a demo button below.');
   };
-
   return (
     <div style={{ minHeight:'100vh', background:BG, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
       <div style={{ width:'100%', maxWidth:400 }}>
-        <div style={{ textAlign:'center', marginBottom:32 }}>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:11, marginBottom:13 }}>
-            <div style={{ width:40, height:40, background:R, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:H, fontWeight:800, fontSize:18, color:'#fff' }}>W</div>
-            <div style={{ textAlign:'left' }}>
-              <div style={{ fontFamily:H, fontWeight:800, fontSize:20, color:T1, letterSpacing:-.3 }}>WyzeTemp</div>
-              <div style={{ fontSize:10, color:T3, letterSpacing:2, textTransform:'uppercase', fontFamily:M }}>Cook Monitoring</div>
-            </div>
-          </div>
-          <div style={{ fontSize:10, color:T3, letterSpacing:1.5, textTransform:'uppercase', fontFamily:M }}>ARBY'S RESTAURANT GROUP</div>
+        {/* Joint logo header on login */}
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:32 }}>
+          <LogoBar size="normal" />
         </div>
-
         <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:12, padding:26 }}>
           <div style={{ marginBottom:15 }}>
             <label style={{ display:'block', fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:7, fontFamily:M }}>Email</label>
@@ -330,7 +319,6 @@ function LoginView({ onLogin }) {
   );
 }
 
-// ─── Store view ───────────────────────────────────────────────────
 function StoreView({ store, cooks, history, onBeefSheet }) {
   return (
     <div style={{ padding:22, maxWidth:1200 }}>
@@ -350,19 +338,16 @@ function StoreView({ store, cooks, history, onBeefSheet }) {
           </button>
         </div>
       </div>
-
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
         <Stat label="Avg Daily Cooks" val={store.dailyCooks} sub="cooks / day" />
         <Stat label="Avg Hold Time"   val={store.avgHold}    sub="per batch" />
         <Stat label="Compliance Rate" val={`${store.compliance}%`} sub="30-day avg" color={OK} />
         <Stat label="Active Alerts"   val={store.alerts}     sub="right now" color={store.alerts>0?ER:T2} />
       </div>
-
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:10, fontFamily:M }}>Live Cooks</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:24 }}>
         {cooks.map(c => <CookCard key={c.id} cook={c} />)}
       </div>
-
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:10, fontFamily:M }}>Recent Cook History</div>
       <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, overflow:'hidden' }}>
         <table style={{ borderCollapse:'collapse', width:'100%' }}>
@@ -397,12 +382,10 @@ function StoreView({ store, cooks, history, onBeefSheet }) {
   );
 }
 
-// ─── Multi-store view ─────────────────────────────────────────────
 function MultiView({ stores, user, onSelect, setView }) {
   const online  = stores.filter(s => s.online).length;
   const alerts  = stores.reduce((a, s) => a + s.alerts, 0);
   const avgComp = (stores.reduce((a, s) => a + s.compliance, 0) / stores.length).toFixed(1);
-
   return (
     <div style={{ padding:22, maxWidth:1200 }}>
       <div style={{ marginBottom:20 }}>
@@ -411,7 +394,7 @@ function MultiView({ stores, user, onSelect, setView }) {
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:22 }}>
         <Stat label="Locations"      val={stores.length} sub="total" />
-        <Stat label="Online Now"     val={online}        sub="active"    color={OK} />
+        <Stat label="Online Now"     val={online}        sub="active"     color={OK} />
         <Stat label="Active Alerts"  val={alerts}        sub="all stores" color={alerts>0?ER:T2} />
         <Stat label="Avg Compliance" val={`${avgComp}%`} sub="30-day"    color={OK} />
       </div>
@@ -458,7 +441,6 @@ function MultiView({ stores, user, onSelect, setView }) {
   );
 }
 
-// ─── Admin view ───────────────────────────────────────────────────
 function AdminView() {
   const systems = [
     ['API Gateway','Operational',OK], ['Data Sync','Operational',OK],
@@ -469,7 +451,6 @@ function AdminView() {
     <div style={{ padding:22, maxWidth:1060 }}>
       <div style={{ fontFamily:H, fontWeight:800, fontSize:23, color:T1, letterSpacing:-.5, marginBottom:3 }}>Administration</div>
       <div style={{ fontSize:12, color:T2, fontFamily:M, marginBottom:22 }}>System config · User management · Thresholds</div>
-
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:10, fontFamily:M }}>Cook Thresholds</div>
       <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:19, marginBottom:20 }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
@@ -482,7 +463,6 @@ function AdminView() {
           ))}
         </div>
       </div>
-
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:10, fontFamily:M }}>Users</div>
       <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, overflow:'hidden', marginBottom:20 }}>
         <table style={{ borderCollapse:'collapse', width:'100%' }}>
@@ -510,7 +490,6 @@ function AdminView() {
           </tbody>
         </table>
       </div>
-
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:10, fontFamily:M }}>System Status</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:9 }}>
         {systems.map(([label, status, color]) => (
@@ -526,18 +505,16 @@ function AdminView() {
   );
 }
 
-// ─── Root App ─────────────────────────────────────────────────────
 export default function App() {
-  const [view,    setView   ] = useState('login');
-  const [user,    setUser   ] = useState(null);
-  const [store,   setStore  ] = useState(STORES[0]);
-  const [sheet,   setSheet  ] = useState(false);
-  const [history             ] = useState(buildHistory);
-  const [cooks,   setCooks  ] = useState(() =>
+  const [view,   setView  ] = useState('login');
+  const [user,   setUser  ] = useState(null);
+  const [store,  setStore ] = useState(STORES[0]);
+  const [sheet,  setSheet ] = useState(false);
+  const [history          ] = useState(buildHistory);
+  const [cooks,  setCooks ] = useState(() =>
     COOK_INIT.map(c => ({ ...c, data: buildCookData(c.elapsed, c.target) }))
   );
 
-  // Live cook simulation
   useEffect(() => {
     if (view !== 'store') return;
     const iv = setInterval(() => {
@@ -577,7 +554,7 @@ export default function App() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@300;400;500&display=swap');*{box-sizing:border-box;margin:0;padding:0}body{background:#0A0A0C;color:#F0F0F4}@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}table{border-collapse:collapse;width:100%}`}</style>
       <div style={{ minHeight:'100vh', background:BG, display:'flex' }}>
         <Sidebar view={view} setView={setView} user={user} onLogout={() => { setUser(null); setView('login'); }} />
-        <div style={{ flex:1, marginLeft:196, overflow:'auto', minHeight:'100vh' }}>
+        <div style={{ flex:1, marginLeft:210, overflow:'auto', minHeight:'100vh' }}>
           {view === 'store' && <StoreView store={store} cooks={cooks} history={history} onBeefSheet={() => setSheet(true)} />}
           {view === 'multi' && <MultiView stores={STORES} user={user} onSelect={setStore} setView={setView} />}
           {view === 'admin' && <AdminView />}
