@@ -70,7 +70,7 @@ function LogoBar({ size = 'normal' }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap }}>
       <img
-        src="/wyzetemp_logo.png"
+        src="/WyzeTemp_LOGO.png"
         alt="WyzeTemp"
         style={{ height: h, width:'auto', objectFit:'contain', display:'block' }}
       />
