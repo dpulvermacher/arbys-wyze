@@ -19,21 +19,21 @@ const M   = "'DM Mono', monospace";
 const STORES = [
   { id:1, num:'#4821', city:'Madison',     state:'WI', addr:'1847 E. Washington Ave', mgr:'Sandra Kowalski', phone:'(608)555-0142', online:true,  alerts:0, dailyCooks:6.2, avgHold:'3h 22m', compliance:99.1  },
   { id:2, num:'#4822', city:'Madison',     state:'WI', addr:'2204 Mineral Point Rd',  mgr:'Tom Reeves',      phone:'(608)555-0198', online:true,  alerts:1, dailyCooks:5.8, avgHold:'3h 15m', compliance:97.8  },
-  { id:3, num:'#4823', city:'Sun Prairie', state:'WI', addr:'115 Windsor St',         mgr:'Janice Miller',   phone:'(608)555-0221', online:true,  alerts:0, dailyCooks:4.9, avgHold:'3h 44m', compliance:100.0 },
+  { id:3, num:'#7984', city:'Newcastle',   state:'OK', addr:'901 NW 32nd St',         mgr:'Janice Miller',   phone:'(608)555-0221', online:true,  alerts:0, dailyCooks:4.9, avgHold:'3h 44m', compliance:100.0 },
   { id:4, num:'#4824', city:'Middleton',   state:'WI', addr:'7503 University Ave',    mgr:'Chris Andersen',  phone:'(608)555-0187', online:false, alerts:2, dailyCooks:5.5, avgHold:'3h 08m', compliance:96.2  },
 ];
 
 const USERS = [
-  { id:1, name:'Alex Rivera',     email:'admin@wyze.io',    pass:'admin', role:'admin',      stores:[1,2,3,4], title:'System Administrator' },
-  { id:2, name:'Morgan Lee',      email:'morgan@arbys.com', pass:'demo',  role:'franchisee', stores:[1,2,3,4], title:'District Franchisee'  },
+  { id:1, name:'Dave Pulvermacher',     email:'admin@wyze.io',    pass:'admin', role:'admin',      stores:[1,2,3,4], title:'System Administrator' },
+  { id:2, name:'Morgan Lee',      email:'morgan@arbys.com', pass:'demo',  role:'franchisee', stores:[1,2], title:'District Franchisee'  },
   { id:3, name:'Sandra Kowalski', email:'sandra@arbys.com', pass:'store', role:'manager',    stores:[1],       title:'Store Manager'        },
 ];
 
 const COOK_INIT = [
-  { id:1, name:'Top Round Roast Beef', unit:'Oven 1', op:'S. Kowalski', target:155, hold:140, elapsed:138, total:240, temp:140.4, status:'cooking' },
-  { id:2, name:'Brisket Flat',         unit:'Oven 2', op:'T. Morales',  target:160, hold:140, elapsed:215, total:215, temp:141.2, status:'holding' },
-  { id:3, name:'Angus Beef',           unit:'Oven 3', op:'J. Chen',     target:155, hold:140, elapsed:51,  total:235, temp:80.7,  status:'cooking' },
-  { id:4, name:'Corned Beef',          unit:'Oven 4', op:'R. Davis',    target:155, hold:140, elapsed:192, total:208, temp:150.2, status:'cooking' },
+  { id:1, name:'BEEF 001', unit:'Oven 1', op:'S. Kowalski', target:138, hold:140, elapsed:138, total:240, temp:104, status:'cooking' },
+  { id:2, name:'BEEF 002', unit:'Oven 2', op:'T. Morales',  target:138, hold:140, elapsed:215, total:215, temp:141.2, status:'holding' },
+  { id:3, name:'BEEF 003', unit:'Oven 3', op:'J. Chen',     target:138, hold:140, elapsed:51,  total:235, temp:80.7,  status:'cooking' },
+  { id:4, name:'BEEF 004', unit:'Oven 4', op:'R. Davis',    target:138, hold:140, elapsed:192, total:208, temp:150.2, status:'holding' },
 ];
 
 function buildCookData(elapsed, target) {
