@@ -518,13 +518,13 @@ function USAMap({ stores, onSelect, setView }) {
   return (
     <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:18, marginBottom:20 }}>
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:12, fontFamily:M }}>Store Locations</div>
-      <div style={{ borderRadius:8, overflow:'hidden', background:C2 }}>
+      <div style={{ borderRadius:8, overflow:'hidden', background:'#13131A' }}>
         <svg viewBox="0 0 960 600" width="100%" style={{ display:'block' }}>
           {paths.length === 0 && (
             <text x="480" y="300" textAnchor="middle" style={{ fill:T3, fontSize:14, fontFamily:'monospace' }}>Loading map...</text>
           )}
           {paths.map((d, i) => (
-            <path key={i} d={d} fill={C2} stroke={BR} strokeWidth="0.5" />
+            <path key={i} d={d} fill="#1E1E28" stroke="#2E2E3C" strokeWidth="0.5" />
           ))}
           {markers.map(m => {
             const store = stores.find(s => s.id === m.id);
