@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 
 const R  = '#C8102E';
 const BG = '#0A0A0C';
@@ -478,62 +479,68 @@ function StoreView({ store, cooks, history, onBeefSheet }) {
 // ── USA Map with store dots ───────────────────────────────────────
 function USAMap({ stores, onSelect, setView }) {
   const [hovered, setHovered] = useState(null);
-  // Simplified USA SVG outline path
-  const usa = "M108,73 L112,58 L130,52 L148,48 L160,44 L178,42 L192,44 L200,50 L210,48 L224,44 L238,42 L252,44 L262,50 L272,52 L282,48 L294,44 L310,42 L326,44 L338,50 L348,52 L358,48 L372,46 L388,48 L400,52 L410,56 L418,62 L422,70 L426,78 L428,88 L426,96 L422,104 L418,110 L412,116 L408,124 L406,132 L408,140 L412,148 L418,154 L422,160 L424,168 L422,176 L418,182 L412,186 L404,190 L396,194 L388,198 L380,204 L374,210 L368,216 L360,220 L350,222 L338,222 L326,220 L314,218 L302,218 L290,220 L278,222 L266,222 L254,220 L242,216 L232,212 L222,208 L212,206 L202,206 L192,208 L182,212 L172,216 L162,218 L150,218 L140,216 L132,212 L124,206 L118,200 L112,194 L108,188 L106,180 L106,172 L108,164 L110,156 L110,148 L108,140 L106,132 L106,124 L108,116 L110,108 L110,100 L108,92 L108,82 Z";
+  const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+
+  const markers = [
+    { id:1, num:'#4821', city:'Madison, WI',   coords:[-89.40, 43.07], online:true  },
+    { id:2, num:'#4822', city:'Madison, WI',   coords:[-89.38, 43.04], online:true  },
+    { id:3, num:'#7984', city:'Newcastle, OK', coords:[-97.60, 35.24], online:true  },
+    { id:4, num:'#4824', city:'Middleton, WI', coords:[-89.52, 43.10], online:false },
+  ];
+
+  const { ComposableMap, Geographies, Geography, Marker } = window.ReactSimpleMaps || {};
 
   return (
     <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:18, marginBottom:20 }}>
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:12, fontFamily:M }}>Store Locations</div>
-      <div style={{ position:'relative' }}>
-        <svg viewBox="0 0 540 280" width="100%" style={{ display:'block' }}>
-          {/* USA fill */}
-          <path d={usa} fill={C2} stroke={BR} strokeWidth="1" />
-          {/* Alaska suggestion */}
-          <rect x="90" y="210" width="60" height="40" rx="4" fill={C2} stroke={BR} strokeWidth="0.5" opacity="0.5"/>
-          <text x="120" y="234" textAnchor="middle" style={{ fontSize:7, fill:T3, fontFamily:M }}>AK</text>
-          {/* Hawaii suggestion */}
-          <rect x="165" y="220" width="40" height="22" rx="4" fill={C2} stroke={BR} strokeWidth="0.5" opacity="0.5"/>
-          <text x="185" y="234" textAnchor="middle" style={{ fontSize:7, fill:T3, fontFamily:M }}>HI</text>
-
-          {/* State label hints */}
-          <text x="498" y="162" textAnchor="middle" style={{ fontSize:8, fill:T3, fontFamily:M }}>WI</text>
-          <text x="400" y="272" textAnchor="middle" style={{ fontSize:8, fill:T3, fontFamily:M }}>OK</text>
-
-          {/* Store dots */}
-          {stores.map(s => (
-            <g key={s.id} style={{ cursor:'pointer' }}
-              onClick={() => { onSelect(s); setView('store'); }}
-              onMouseEnter={() => setHovered(s.id)}
-              onMouseLeave={() => setHovered(null)}>
-              {/* Pulse ring */}
-              {s.online && (
-                <circle cx={s.mapX} cy={s.mapY} r="10" fill="none" stroke={R} strokeWidth="1" opacity={hovered===s.id?0.6:0.25} />
-              )}
-              <circle cx={s.mapX} cy={s.mapY} r="5"
-                fill={s.online ? R : T3}
-                stroke={hovered===s.id ? '#fff' : C1}
-                strokeWidth="1.5" />
-              {/* Tooltip on hover */}
-              {hovered===s.id && (
+      <div style={{ borderRadius:8, overflow:'hidden' }}>
+        <ComposableMap
+          projection="geoAlbersUsa"
+          style={{ width:'100%', height:'auto' }}
+          projectionConfig={{ scale: 900 }}
+        >
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map(geo => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill={C2}
+                  stroke={BR}
+                  strokeWidth={0.5}
+                  style={{ default:{ outline:'none' }, hover:{ outline:'none' }, pressed:{ outline:'none' } }}
+                />
+              ))
+            }
+          </Geographies>
+          {markers.map(m => (
+            <Marker key={m.id} coordinates={m.coords}
+              onClick={() => { const s = stores.find(s=>s.id===m.id); if(s){ onSelect(s); setView('store'); } }}
+              onMouseEnter={() => setHovered(m.id)}
+              onMouseLeave={() => setHovered(null)}
+              style={{ cursor:'pointer' }}
+            >
+              <circle r={6} fill={m.online ? R : T3} stroke={hovered===m.id?'#fff':C1} strokeWidth={1.5} />
+              {m.online && <circle r={10} fill="none" stroke={R} strokeWidth={1} opacity={0.35} />}
+              {hovered===m.id && (
                 <g>
-                  <rect x={s.mapX+10} y={s.mapY-28} width={130} height={38} rx="4" fill={C1} stroke={BR} strokeWidth="0.5"/>
-                  <text x={s.mapX+16} y={s.mapY-12} style={{ fontSize:9, fill:T1, fontFamily:'system-ui', fontWeight:600 }}>Arby's {s.num}</text>
-                  <text x={s.mapX+16} y={s.mapY+2}  style={{ fontSize:8, fill:T2, fontFamily:'system-ui' }}>{s.city}, {s.state}</text>
+                  <rect x={12} y={-22} width={120} height={34} rx={4} fill={C1} stroke={BR} strokeWidth={0.5} />
+                  <text x={18} y={-6}  style={{ fontSize:9, fill:T1, fontFamily:'system-ui', fontWeight:600 }}>Arby's {m.num}</text>
+                  <text x={18} y={6}   style={{ fontSize:8, fill:T2, fontFamily:'system-ui' }}>{m.city}</text>
                 </g>
               )}
-            </g>
+            </Marker>
           ))}
-        </svg>
-        {/* Legend */}
-        <div style={{ display:'flex', gap:16, marginTop:8 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
-            <div style={{ width:8, height:8, borderRadius:'50%', background:R }} /> Online
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
-            <div style={{ width:8, height:8, borderRadius:'50%', background:T3 }} /> Offline
-          </div>
-          <div style={{ fontSize:10, color:T3, fontFamily:M, marginLeft:'auto' }}>Click a dot to open store</div>
+        </ComposableMap>
+      </div>
+      <div style={{ display:'flex', gap:16, marginTop:8 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:R }} /> Online
         </div>
+        <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:T3 }} /> Offline
+        </div>
+        <div style={{ fontSize:10, color:T3, fontFamily:M, marginLeft:'auto' }}>Click a dot to open store</div>
       </div>
     </div>
   );
