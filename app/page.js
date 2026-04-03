@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 
 const R  = '#C8102E';
 const BG = '#0A0A0C';
@@ -478,60 +477,75 @@ function StoreView({ store, cooks, history, onBeefSheet }) {
 
 // ── USA Map with store dots ───────────────────────────────────────
 function USAMap({ stores, onSelect, setView }) {
+  const [paths, setPaths] = useState([]);
   const [hovered, setHovered] = useState(null);
-  const geoUrl = "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json";
+
+  useEffect(() => {
+    fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+      .then(r => r.json())
+      .then(topo => {
+        const { scale, translate } = topo.transform;
+        const arcs = topo.arcs.map(arc => {
+          let x = 0, y = 0;
+          return arc.map(([dx, dy]) => {
+            x += dx; y += dy;
+            return [x * scale[0] + translate[0], y * scale[1] + translate[1]];
+          });
+        });
+        const getArc = idx => idx >= 0 ? arcs[idx] : [...arcs[~idx]].reverse();
+        const ringsToPath = rings => rings.map(ring => {
+          const pts = ring.flatMap(idx => getArc(idx));
+          if (!pts.length) return '';
+          return `M${pts.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join('L')}Z`;
+        }).join('');
+        const statePaths = topo.objects.states.geometries.flatMap(geom => {
+          if (geom.type === 'Polygon') return [ringsToPath(geom.arcs)];
+          if (geom.type === 'MultiPolygon') return geom.arcs.map(ringsToPath);
+          return [];
+        }).filter(Boolean);
+        setPaths(statePaths);
+      })
+      .catch(e => console.warn('Map load failed', e));
+  }, []);
 
   const markers = [
-    { id:1, num:'#4821', city:'Madison, WI',   coords:[-89.40, 43.07], online:true  },
-    { id:2, num:'#4822', city:'Madison, WI',   coords:[-89.38, 43.04], online:true  },
-    { id:3, num:'#7984', city:'Newcastle, OK', coords:[-97.60, 35.24], online:true  },
-    { id:4, num:'#4824', city:'Middleton, WI', coords:[-89.52, 43.10], online:false },
+    { id:1, x:596, y:209, num:'#4821', city:'Madison, WI',   online:true  },
+    { id:2, x:601, y:214, num:'#4822', city:'Madison, WI',   online:true  },
+    { id:3, x:464, y:318, num:'#7984', city:'Newcastle, OK', online:true  },
+    { id:4, x:589, y:204, num:'#4824', city:'Middleton, WI', online:false },
   ];
-
-  const { ComposableMap, Geographies, Geography, Marker } = window.ReactSimpleMaps || {};
 
   return (
     <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:18, marginBottom:20 }}>
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:12, fontFamily:M }}>Store Locations</div>
-      <div style={{ borderRadius:8, overflow:'hidden' }}>
-        <ComposableMap
-          projection="geoAlbersUsa"
-          style={{ width:'100%', height:'auto' }}
-          projectionConfig={{ scale: 900 }}
-        >
-          <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map(geo => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill={C2}
-                  stroke={BR}
-                  strokeWidth={0.5}
-                  style={{ default:{ outline:'none' }, hover:{ outline:'none' }, pressed:{ outline:'none' } }}
-                />
-              ))
-            }
-          </Geographies>
-          {markers.map(m => (
-            <Marker key={m.id} coordinates={m.coords}
-              onClick={() => { const s = stores.find(s=>s.id===m.id); if(s){ onSelect(s); setView('store'); } }}
-              onMouseEnter={() => setHovered(m.id)}
-              onMouseLeave={() => setHovered(null)}
-              style={{ cursor:'pointer' }}
-            >
-              <circle r={6} fill={m.online ? R : T3} stroke={hovered===m.id?'#fff':C1} strokeWidth={1.5} />
-              {m.online && <circle r={10} fill="none" stroke={R} strokeWidth={1} opacity={0.35} />}
-              {hovered===m.id && (
-                <g>
-                  <rect x={12} y={-22} width={120} height={34} rx={4} fill={C1} stroke={BR} strokeWidth={0.5} />
-                  <text x={18} y={-6}  style={{ fontSize:9, fill:T1, fontFamily:'system-ui', fontWeight:600 }}>Arby's {m.num}</text>
-                  <text x={18} y={6}   style={{ fontSize:8, fill:T2, fontFamily:'system-ui' }}>{m.city}</text>
-                </g>
-              )}
-            </Marker>
+      <div style={{ borderRadius:8, overflow:'hidden', background:C2 }}>
+        <svg viewBox="0 0 960 600" width="100%" style={{ display:'block' }}>
+          {paths.length === 0 && (
+            <text x="480" y="300" textAnchor="middle" style={{ fill:T3, fontSize:14, fontFamily:'monospace' }}>Loading map...</text>
+          )}
+          {paths.map((d, i) => (
+            <path key={i} d={d} fill={C2} stroke={BR} strokeWidth="0.5" />
           ))}
-        </ComposableMap>
+          {markers.map(m => {
+            const store = stores.find(s => s.id === m.id);
+            return (
+              <g key={m.id} style={{ cursor:'pointer' }}
+                onClick={() => { if(store){ onSelect(store); setView('store'); } }}
+                onMouseEnter={() => setHovered(m.id)}
+                onMouseLeave={() => setHovered(null)}>
+                {m.online && <circle cx={m.x} cy={m.y} r={12} fill="none" stroke={R} strokeWidth="1" opacity="0.35" />}
+                <circle cx={m.x} cy={m.y} r={6} fill={m.online?R:T3} stroke={hovered===m.id?'#fff':C1} strokeWidth="1.5" />
+                {hovered===m.id && (
+                  <g>
+                    <rect x={m.x+12} y={m.y-24} width={140} height={38} rx={4} fill={C1} stroke={BR} strokeWidth="0.5"/>
+                    <text x={m.x+18} y={m.y-7} style={{ fontSize:12, fill:T1, fontFamily:'system-ui', fontWeight:600 }}>Arby's {m.num}</text>
+                    <text x={m.x+18} y={m.y+9} style={{ fontSize:11, fill:T2, fontFamily:'system-ui' }}>{m.city}</text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
+        </svg>
       </div>
       <div style={{ display:'flex', gap:16, marginTop:8 }}>
         <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
