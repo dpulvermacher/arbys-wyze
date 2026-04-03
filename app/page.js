@@ -27,6 +27,7 @@ const USERS = [
   { id:1, name:'Dave Pulvermacher',     email:'admin@wyze.io',    pass:'admin', role:'admin',      stores:[1,2,3,4], title:'System Administrator' },
   { id:2, name:'Morgan Lee',      email:'morgan@arbys.com', pass:'demo',  role:'franchisee', stores:[1,2], title:'District Franchisee'  },
   { id:3, name:'Sandra Kowalski', email:'sandra@arbys.com', pass:'store', role:'manager',    stores:[1],       title:'Store Manager'        },
+  { id:4, name:'Dominic Johnson',     email:'dkjohnson@inspirebrands.com', pass:'admin',  role:'admin', stores:[1,2,3,4],       title:'Innovation Lead'  }
 ];
 
 const COOK_INIT = [
@@ -336,6 +337,9 @@ function StoreView({ store, cooks, history, onBeefSheet }) {
           <button onClick={onBeefSheet} style={{ background:R, border:'none', borderRadius:6, padding:'8px 14px', color:'#fff', fontFamily:H, fontSize:12, fontWeight:700, cursor:'pointer' }}>
             ↓ Beef Sheet
           </button>
+          <a href="/arbys-beef-sheet.pdf" download style={{ background:'transparent', border:`1px solid ${BR}`, borderRadius:6, padding:'8px 14px', color:T2, fontFamily:H, fontSize:12, fontWeight:700, cursor:'pointer', textDecoration:'none' }}>
+  ↓ Template PDF
+</a>
         </div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
