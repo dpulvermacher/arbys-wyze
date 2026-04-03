@@ -481,6 +481,21 @@ function USAMap({ stores, onSelect, setView }) {
   const [hovered, setHovered] = useState(null);
 
   useEffect(() => {
+    const rad = Math.PI / 180;
+
+    // Albers Equal-Area Conic projection for continental USA
+    function project(lon, lat) {
+      const phi1 = 29.5*rad, phi2 = 45.5*rad;
+      const phi0 = 37.5*rad, lam0 = -96*rad;
+      const n  = 0.5*(Math.sin(phi1)+Math.sin(phi2));
+      const C  = Math.cos(phi1)**2 + 2*n*Math.sin(phi1);
+      const r0 = Math.sqrt(C - 2*n*Math.sin(phi0))/n;
+      const r  = Math.sqrt(Math.max(0, C - 2*n*Math.sin(lat*rad)))/n;
+      const th = n*(lon*rad - lam0);
+      return [480 + 1070*(r*Math.sin(th)),
+              310 - 1070*(r0 - r*Math.cos(th))];
+    }
+
     fetch('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
       .then(r => r.json())
       .then(topo => {
@@ -489,18 +504,18 @@ function USAMap({ stores, onSelect, setView }) {
           let x = 0, y = 0;
           return arc.map(([dx, dy]) => {
             x += dx; y += dy;
-            return [x * scale[0] + translate[0], y * scale[1] + translate[1]];
+            return project(x*scale[0]+translate[0], y*scale[1]+translate[1]);
           });
         });
-        const getArc = idx => idx >= 0 ? arcs[idx] : [...arcs[~idx]].reverse();
+        const getArc = i => i>=0 ? arcs[i] : [...arcs[~i]].reverse();
         const ringsToPath = rings => rings.map(ring => {
-          const pts = ring.flatMap(idx => getArc(idx));
+          const pts = ring.flatMap(i => getArc(i));
           if (!pts.length) return '';
-          return `M${pts.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join('L')}Z`;
+          return `M${pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')}Z`;
         }).join('');
         const statePaths = topo.objects.states.geometries.flatMap(geom => {
-          if (geom.type === 'Polygon') return [ringsToPath(geom.arcs)];
-          if (geom.type === 'MultiPolygon') return geom.arcs.map(ringsToPath);
+          if (geom.type==='Polygon') return [ringsToPath(geom.arcs)];
+          if (geom.type==='MultiPolygon') return geom.arcs.map(ringsToPath);
           return [];
         }).filter(Boolean);
         setPaths(statePaths);
@@ -508,38 +523,39 @@ function USAMap({ stores, onSelect, setView }) {
       .catch(e => console.warn('Map load failed', e));
   }, []);
 
+  // Pixel positions in Albers 960x600 — verified against projection math
   const markers = [
-    { id:1, x:596, y:209, num:'#4821', city:'Madison, WI',   online:true  },
-    { id:2, x:601, y:214, num:'#4822', city:'Madison, WI',   online:true  },
-    { id:3, x:464, y:318, num:'#7984', city:'Newcastle, OK', online:true  },
-    { id:4, x:589, y:204, num:'#4824', city:'Middleton, WI', online:false },
+    { id:1, x:569, y:200, num:'#4821', city:'Madison, WI',   online:true  },
+    { id:2, x:574, y:205, num:'#4822', city:'Madison, WI',   online:true  },
+    { id:3, x:456, y:345, num:'#7984', city:'Newcastle, OK', online:true  },
+    { id:4, x:563, y:197, num:'#4824', city:'Middleton, WI', online:false },
   ];
 
   return (
     <div style={{ background:C1, border:`1px solid ${BR}`, borderRadius:10, padding:18, marginBottom:20 }}>
       <div style={{ fontSize:10, color:T2, letterSpacing:1.5, textTransform:'uppercase', marginBottom:12, fontFamily:M }}>Store Locations</div>
-      <div style={{ borderRadius:8, overflow:'hidden', background:'#13131A' }}>
+      <div style={{ borderRadius:8, overflow:'hidden', background:'#0D0D14' }}>
         <svg viewBox="0 0 960 600" width="100%" style={{ display:'block' }}>
           {paths.length === 0 && (
             <text x="480" y="300" textAnchor="middle" style={{ fill:T3, fontSize:14, fontFamily:'monospace' }}>Loading map...</text>
           )}
-          {paths.map((d, i) => (
-            <path key={i} d={d} fill="#1E1E28" stroke="#2E2E3C" strokeWidth="0.5" />
+          {paths.map((d,i) => (
+            <path key={i} d={d} fill="#1A1A28" stroke="#2A2A3C" strokeWidth="0.8" />
           ))}
           {markers.map(m => {
-            const store = stores.find(s => s.id === m.id);
+            const store = stores.find(s => s.id===m.id);
             return (
               <g key={m.id} style={{ cursor:'pointer' }}
-                onClick={() => { if(store){ onSelect(store); setView('store'); } }}
-                onMouseEnter={() => setHovered(m.id)}
-                onMouseLeave={() => setHovered(null)}>
-                {m.online && <circle cx={m.x} cy={m.y} r={12} fill="none" stroke={R} strokeWidth="1" opacity="0.35" />}
-                <circle cx={m.x} cy={m.y} r={6} fill={m.online?R:T3} stroke={hovered===m.id?'#fff':C1} strokeWidth="1.5" />
+                onClick={()=>{ if(store){ onSelect(store); setView('store'); } }}
+                onMouseEnter={()=>setHovered(m.id)}
+                onMouseLeave={()=>setHovered(null)}>
+                {m.online && <circle cx={m.x} cy={m.y} r={13} fill="none" stroke={R} strokeWidth="1" opacity="0.4"/>}
+                <circle cx={m.x} cy={m.y} r={6} fill={m.online?R:T3} stroke={hovered===m.id?'#fff':C1} strokeWidth="1.5"/>
                 {hovered===m.id && (
                   <g>
-                    <rect x={m.x+12} y={m.y-24} width={140} height={38} rx={4} fill={C1} stroke={BR} strokeWidth="0.5"/>
-                    <text x={m.x+18} y={m.y-7} style={{ fontSize:12, fill:T1, fontFamily:'system-ui', fontWeight:600 }}>Arby's {m.num}</text>
-                    <text x={m.x+18} y={m.y+9} style={{ fontSize:11, fill:T2, fontFamily:'system-ui' }}>{m.city}</text>
+                    <rect x={m.x+12} y={m.y-24} width={145} height={38} rx={4} fill={C1} stroke={BR} strokeWidth="0.5"/>
+                    <text x={m.x+18} y={m.y-8} style={{ fontSize:12, fill:T1, fontFamily:'system-ui', fontWeight:600 }}>Arby's {m.num}</text>
+                    <text x={m.x+18} y={m.y+8} style={{ fontSize:11, fill:T2, fontFamily:'system-ui' }}>{m.city}</text>
                   </g>
                 )}
               </g>
@@ -549,10 +565,10 @@ function USAMap({ stores, onSelect, setView }) {
       </div>
       <div style={{ display:'flex', gap:16, marginTop:8 }}>
         <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
-          <div style={{ width:8, height:8, borderRadius:'50%', background:R }} /> Online
+          <div style={{ width:8, height:8, borderRadius:'50%', background:R }}/> Online
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:T2, fontFamily:M }}>
-          <div style={{ width:8, height:8, borderRadius:'50%', background:T3 }} /> Offline
+          <div style={{ width:8, height:8, borderRadius:'50%', background:T3 }}/> Offline
         </div>
         <div style={{ fontSize:10, color:T3, fontFamily:M, marginLeft:'auto' }}>Click a dot to open store</div>
       </div>
